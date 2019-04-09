@@ -18,4 +18,4 @@ if __name__ == '__main__':
             total_games += 1
             env.reset()
 
-    print(" Average %d steps, Average reward %.2f" % (1.0*total_steps / total_games, 1.0*total_reward / total_games))
+    print(" Average %d steps, Average reward %.2f" % (1.0 * total_steps / total_games, 1.0 * total_reward / total_games))
