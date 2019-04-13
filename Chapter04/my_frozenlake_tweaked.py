@@ -14,6 +14,8 @@ BATCH_SIZE = 100
 PERCENTILE = 30
 GAMMA = .90
 LEARNING_RATE = .001
+RENDER = True
+MONITOR = False
 
 
 class DiscreteOneHotWrapper(gym.ObservationWrapper):
@@ -52,6 +54,8 @@ def iterate_batches(env, net, batch_size):
     sm = nn.Softmax(dim=1)
 
     while True:
+        if RENDER:
+            env.render()
         obs_v = torch.FloatTensor([obs])
         act_probs_v = sm(net(obs_v))
         act_probs = act_probs_v.data.numpy()[0]
@@ -92,7 +96,8 @@ def filter_batch(batch, percentile):
 
 if __name__ == '__main__':
     env = DiscreteOneHotWrapper(gym.make("FrozenLake-v0"))
-    #env = gym.wrappers.Monitor(env, directory='mon', force=True)
+    if MONITOR:
+        env = gym.wrappers.Monitor(env, directory='mon', force=True)
     obs_size = env.observation_space.shape[0]
     n_actions = env.action_space.n
 
