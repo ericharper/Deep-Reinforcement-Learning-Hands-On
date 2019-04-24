@@ -2,6 +2,7 @@ import gym
 import collections
 from tensorboardX import SummaryWriter
 
+#ENV_NAME = 'FrozenLake-v0'
 ENV_NAME = 'FrozenLake8x8-v0'
 GAMMA = 0.9
 TEST_EPISODES = 20
@@ -25,19 +26,11 @@ class Agent:
             self.transits[(self.state, action)][new_state] += 1
             self.state = self.env.reset() if is_done else new_state
 
-    def calc_action_value(self, state, action):
-        target_counts = self.transits[(state, action)]
-        total = sum(target_counts.values())
-        action_value = 0.0
-        for target_state, count in target_counts.items():
-            reward = self.rewards[(state, action, target_state)]
-            action_value += (count / total) * (reward + GAMMA * self.values[target_state])
-        return action_value
 
     def select_action(self, state):
         best_action, best_value = None, None
         for action in range(self.env.action_space.n):
-            action_value = self.calc_action_value(state, action)
+            action_value = self.values[(state, action)]
             if best_value is None or best_value < action_value:
                 best_value = action_value
                 best_action = action
@@ -64,8 +57,15 @@ class Agent:
 
     def value_iteration(self):
         for state in range(self.env.observation_space.n):
-            state_values = [self.calc_action_value(state, action) for action in range(self.env.action_space.n)]
-            self.values[state] = max(state_values)
+            for action in range(self.env.action_space.n):
+                action_value = 0.0
+                target_counts = self.transits[(state, action)]
+                total = sum(target_counts.values())
+                for target_state, count in target_counts.items():
+                    reward = self.rewards[(state, action, target_state)]
+                    best_action = self.select_action(target_state)
+                    action_value += (count / total) * (reward + GAMMA * self.values[(target_state, best_action)])
+                self.values[(state, action)] = action_value
 
 
 if __name__ == "__main__":
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     if MONITOR:
         test_env = gym.wrappers.Monitor(test_env, directory='mon', force=True)
     agent = Agent()
-    writer = SummaryWriter(comment="-v-learning")
+    writer = SummaryWriter(comment="-q-iteration")
     iter_no = 0
     best_reward = 0.0
     while True:
